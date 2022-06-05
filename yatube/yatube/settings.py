@@ -115,4 +115,3 @@ CACHES = {
     }
 }
 CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
-
