@@ -1,10 +1,11 @@
 from http import HTTPStatus
+
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.db import models
 from django.test import TestCase, Client
 from django.urls import reverse
-from django.core.cache import cache
 
 from ..models import Group, Post, Follow
 
@@ -52,6 +53,7 @@ class PostViewTests(TestCase):
         )
 
     def setUp(self):
+        cache.clear()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
@@ -137,7 +139,7 @@ class PaginatorViewsTest(TestCase):
             ('posts:profile', {'username': cls.author}),
             ('posts:group_list', {'slug': cls.group.slug}))
 
-        cls.url_follow = 'posts:follow_index', None
+        # cls.url_follow = 'posts:follow_index', None
 
         posts = [
             Post(text=f'Тестовый текст{i}',
