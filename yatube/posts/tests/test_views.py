@@ -139,7 +139,7 @@ class PaginatorViewsTest(TestCase):
             ('posts:profile', {'username': cls.author}),
             ('posts:group_list', {'slug': cls.group.slug}))
 
-        # cls.url_follow = 'posts:follow_index', None
+        cls.url_follow = 'posts:follow_index', None
 
         posts = [
             Post(text=f'Тестовый текст{i}',
@@ -150,6 +150,7 @@ class PaginatorViewsTest(TestCase):
         Post.objects.bulk_create(posts)
 
     def setUp(self) -> None:
+        cache.clear()
         self.guest_client = Client()
         self.authorized_client_follower = Client()
         self.authorized_client_following = Client()
