@@ -31,7 +31,8 @@ class PostURLTests(TestCase):
             ('posts:group_list', {'slug': cls.group.slug},
              'posts/group_list.html'),
             ('posts:post_detail', {'post_id': cls.post.id},
-             'posts/post_detail.html'))
+             'posts/post_detail.html'),
+            ('posts:follow_index', None, 'posts/follow.html'))
 
         cls.urls_redir = (
             ('posts:post_edit', {'post_id': cls.post.id},
@@ -61,7 +62,7 @@ class PostURLTests(TestCase):
 
     def test_common_url_exists_at_desired_location(self):
         """Страницы доступны любому пользователю."""
-        for url, slug, template in self.urls_redir:
+        for url, slug, template in self.urls_common:
             reverse_name = reverse(url, kwargs=slug)
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)

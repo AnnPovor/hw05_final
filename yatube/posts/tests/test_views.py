@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.core.cache import cache
 
 from ..models import Group, Post, Follow
 
@@ -38,7 +39,8 @@ class PostViewTests(TestCase):
              'posts/post_detail.html'),
             ('posts:post_edit', {'post_id': cls.post.id},
              'posts/create_post.html'),
-            ('posts:post_create', None, 'posts/create_post.html'))
+            ('posts:post_create', None, 'posts/create_post.html'),
+            ('posts:follow_index', None, 'posts/follow.html'))
 
         cls.image = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
@@ -74,6 +76,7 @@ class PostViewTests(TestCase):
 
     def test_index_show_correct_context(self):
         """Index сформирован с правильным контекстом."""
+        cache.clear()
         response = self.authorized_client.get(reverse('posts:index'))
         self.check_context(response)
 
@@ -122,7 +125,8 @@ class PaginatorViewsTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='auth')
+        cls.user = User.objects.create_user(username='follower')
+        cls.author = User.objects.create_user(username='following')
         cls.group = Group.objects.create(
             title='Тестовый заголовок',
             description='Тестовый текст',
@@ -130,12 +134,14 @@ class PaginatorViewsTest(TestCase):
         )
         cls.urls_common = (
             ('posts:index', None),
-            ('posts:profile', {'username': cls.user}),
+            ('posts:profile', {'username': cls.author}),
             ('posts:group_list', {'slug': cls.group.slug}))
+
+        cls.url_follow = 'posts:follow_index', None
 
         posts = [
             Post(text=f'Тестовый текст{i}',
-                 author=cls.user,
+                 author=cls.author,
                  group=cls.group)
             for i in range(13)
         ]
@@ -143,6 +149,10 @@ class PaginatorViewsTest(TestCase):
 
     def setUp(self) -> None:
         self.guest_client = Client()
+        self.authorized_client_follower = Client()
+        self.authorized_client_following = Client()
+        self.authorized_client_follower.force_login(self.user)
+        self.authorized_client_following.force_login(self.author)
 
     def test_page_contains_ten_records(self):
         for url, slug in self.urls_common:
@@ -154,6 +164,15 @@ class PaginatorViewsTest(TestCase):
                     reverse(url, kwargs=slug) + '?page=2')
                 self.assertEqual(len(response.context['page_obj']), 3)
 
+    def test_follow_index_contains_ten_records(self):
+        Follow.objects.create(user=self.user, author=self.author)
+        response = self.authorized_client_follower.get(
+            reverse('posts:follow_index'))
+        self.assertEqual(len(response.context['page_obj']), 10)
+        response = self.authorized_client_follower.get(
+            reverse('posts:follow_index') + '?page=2')
+        self.assertEqual(len(response.context['page_obj']), 3)
+
 
 class PostCacheTest(TestCase):
     @classmethod
@@ -161,19 +180,32 @@ class PostCacheTest(TestCase):
         super().setUpClass()
         cls.user = User.objects.create_user(
             username='auth',)
+        cls.group = Group.objects.create(
+            title='Тестовый заголовок',
+            description='Тестовый текст',
+            slug='test-slug',
+        )
+        cls.post = Post.objects.create(
+               text='Тестовый пост',
+               author=cls.user,
+               group=cls.group,
+               pk=1)
+        cls.url_index = 'posts:index', None
 
     def setUp(self):
-        self.guest_client = Client()
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
 
     def test_index_cache(self):
-        post = Post.objects.create(
-            text='Тестовый пост',
-            author=self.user,
-        )
-        response = self.guest_client.get(reverse('posts:index'))
-        Post.objects.filter(pk=post.pk).delete()
-        response_2 = self.guest_client.get(reverse('posts:index'))
+        response = self.authorized_client.get(reverse('posts:index'))
+        post = self.post
+        post.text = 'Изменённый пост',
+        post.save()
+        response_2 = self.authorized_client.get(reverse('posts:index'))
         self.assertEqual(response.content, response_2.content)
+        cache.clear()
+        response_3 = self.authorized_client.get(reverse('posts:index'))
+        self.assertNotEqual(response.content, response_3.content)
 
 
 class FollowTest(TestCase):
