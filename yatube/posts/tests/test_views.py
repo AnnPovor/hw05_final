@@ -186,10 +186,10 @@ class PostCacheTest(TestCase):
             slug='test-slug',
         )
         cls.post = Post.objects.create(
-               text='Тестовый пост',
-               author=cls.user,
-               group=cls.group,
-               pk=1)
+            text='Тестовый пост',
+            author=cls.user,
+            group=cls.group,
+            pk=1)
         cls.url_index = 'posts:index', None
 
     def setUp(self):
