@@ -75,7 +75,8 @@ class PostModelTest(TestCase):
         for field, expected_value in field_verboses_comment.items():
             with self.subTest(field=field):
                 self.assertEqual(
-                    comment._meta.get_field(field).verbose_name, expected_value)
+                    comment._meta.get_field(field).verbose_name,
+                    expected_value)
         for field, expected_value in field_verboses_follow.items():
             with self.subTest(field=field):
                 self.assertEqual(
