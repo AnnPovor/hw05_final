@@ -44,7 +44,7 @@ class PostURLTests(TestCase):
         cache.clear()
         self.guest_client = Client()
         self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
+        self.authorized_client.force_login(PostURLTests.user)
 
     def test_urls_common_uses_correct_template(self):
         """Common URL-адрес использует соответствующий шаблон."""
@@ -83,4 +83,4 @@ class PostURLTests(TestCase):
 
     def test_unexisting_page(self):
         response = self.guest_client.get('/unexisting_page/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, HTTPStatus.OK)

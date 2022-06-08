@@ -27,8 +27,7 @@ class PostViewTests(TestCase):
         cls.post = Post.objects.create(
             text='Тестовый пост',
             author=cls.user,
-            group=cls.group,
-            pub_date=models.DateTimeField(auto_now_add=True))
+            group=cls.group)
 
         cls.urls_common = (
             ('posts:index', None, 'posts/index.html'),
@@ -55,7 +54,7 @@ class PostViewTests(TestCase):
     def setUp(self):
         cache.clear()
         self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
+        self.authorized_client.force_login(PostViewTests.user)
 
     def test_urls_common_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -78,7 +77,6 @@ class PostViewTests(TestCase):
 
     def test_index_show_correct_context(self):
         """Index сформирован с правильным контекстом."""
-        cache.clear()
         response = self.authorized_client.get(reverse('posts:index'))
         self.check_context(response)
 
